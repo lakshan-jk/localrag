@@ -67,6 +67,20 @@ uvicorn rag:app --reload
 #   POST http://localhost:8000/ask  { "question": "..." }
 ```
 
+## Agentic RAG (`agent.py`)
+
+Plain RAG retrieves once and answers. The **agent** version instead *decides* when (and how
+many times) to search — it reasons, calls tools, reads the results, and can call again before
+answering. Built with **LangGraph** (`langchain.agents.create_agent`) over two tools:
+`search_documents` (semantic search on the FAISS index) and `list_sources`.
+
+```bash
+python agent.py "List the documents, then explain how content is protected from piracy."
+```
+
+Plain RAG vs. agent: use plain RAG when one retrieval answers the question; use an agent when
+the task needs multiple lookups, tool use, or iteration.
+
 ## Things to try (and talk about in an interview)
 
 - Change `TOP_K` in `.env` and see how more/less context changes answers.
