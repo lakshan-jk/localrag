@@ -1,0 +1,13 @@
+fastapi>=0.110
+uvicorn[standard]>=0.29
+langchain>=0.2.0
+langchain-community>=0.2.0
+langchain-huggingface>=0.0.3
+langchain-ollama>=0.1.0
+faiss-cpu>=1.8.0
+sentence-transformers>=2.7.0
+pypdf>=4.2.0
+python-dotenv>=1.0.1
+# Optional cloud LLMs — uncomment only if you set LLM_PROVIDER=anthropic or openai:
+# langchain-anthropic>=0.1.15
+# langchain-openai>=0.1.7
