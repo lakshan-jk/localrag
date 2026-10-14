@@ -7,44 +7,33 @@ before answering. Built with LangGraph's ReAct agent + the same local FAISS inde
 and local LLM (Ollama) as rag.py.
 
 Tools the agent can call:
-  - search_documents(query): semantic search over the FAISS knowledge base
+  - search_documents(query): hybrid + re-ranked search over the FAISS knowledge base
   - list_sources(): list the filenames currently indexed
 
 Run:
-  python agent.py "What documents do you have, and how does YourBackers handle payments?"
+  python agent.py "List your documents, then explain how a cross-encoder re-ranker works."
 """
 import sys
 
 from langchain.agents import create_agent
 from langchain_core.tools import tool
 
-from rag import load_index, get_llm, TOP_K
-
-# Load the FAISS index once and reuse it across tool calls.
-_store = None
-
-
-def _get_store():
-    global _store
-    if _store is None:
-        _store = load_index()
-    return _store
+from rag import load_index, retrieve, _cite, get_llm
 
 
 @tool
 def search_documents(query: str) -> str:
     """Search the knowledge base and return the most relevant passages for a query."""
-    store = _get_store()
-    if store is None:
+    items = retrieve(query)  # full hybrid + re-rank pipeline from rag.py
+    if not items:
         return "No index found. Run:  python rag.py ingest"
-    hits = store.similarity_search(query, k=TOP_K)
-    return "\n\n".join(f"[{d.metadata['source']}] {d.page_content}" for d in hits)
+    return "\n\n".join(f"[{_cite(d)}] {d.page_content}" for d, _ in items)
 
 
 @tool
 def list_sources() -> str:
     """List the filenames of all documents currently in the knowledge base."""
-    store = _get_store()
+    store = load_index()
     if store is None:
         return "No index found. Run:  python rag.py ingest"
     sources = sorted({d.metadata.get("source", "?") for d in store.docstore._dict.values()})
@@ -54,7 +43,7 @@ def list_sources() -> str:
 SYSTEM_PROMPT = (
     "You are a research assistant with access to a document knowledge base. "
     "Use the tools to look things up before answering — do not rely on prior knowledge. "
-    "Cite the source filename(s) you used in square brackets, e.g. [file.md]. "
+    "Cite the source you used in square brackets, e.g. [retrieval.md › Cross-encoder re-ranking]. "
     "If the answer is not in the documents, say so plainly."
 )
 
@@ -72,7 +61,7 @@ def run(question: str) -> str:
 
 if __name__ == "__main__":
     question = " ".join(sys.argv[1:]) or (
-        "What documents do you have, and how does YourBackers handle payments?"
+        "List your documents, then explain how a cross-encoder re-ranker works."
     )
     print("Q:", question, "\n")
     print(run(question))
